@@ -12,9 +12,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gethook/gethook-cli/internal/api"
-	"github.com/gethook/gethook-cli/internal/config"
-	"github.com/gethook/gethook-cli/internal/output"
+	"github.com/gethooklabs/gethook-cli/internal/api"
+	"github.com/gethooklabs/gethook-cli/internal/config"
+	"github.com/gethooklabs/gethook-cli/internal/output"
 )
 
 func newLoginCmd() *cobra.Command {

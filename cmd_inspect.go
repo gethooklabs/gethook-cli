@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 
-	"github.com/gethook/gethook-cli/internal/output"
+	"github.com/gethooklabs/gethook-cli/internal/output"
 )
 
 func newInspectCmd() *cobra.Command {

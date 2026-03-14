@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gethook/gethook-cli/internal/output"
+	"github.com/gethooklabs/gethook-cli/internal/output"
 )
 
 func newDestinationsCmd() *cobra.Command {

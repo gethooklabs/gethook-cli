@@ -12,8 +12,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/gethook/gethook-cli/internal/api"
-	"github.com/gethook/gethook-cli/internal/output"
+	"github.com/gethooklabs/gethook-cli/internal/api"
+	"github.com/gethooklabs/gethook-cli/internal/output"
 )
 
 // Event is the normalized form pushed to callers.

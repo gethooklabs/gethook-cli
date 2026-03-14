@@ -11,9 +11,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	fixtures "github.com/gethook/gethook-cli/internal/fixtures"
-	"github.com/gethook/gethook-cli/internal/output"
-	"github.com/gethook/gethook-cli/internal/proxy"
+	fixtures "github.com/gethooklabs/gethook-cli/internal/fixtures"
+	"github.com/gethooklabs/gethook-cli/internal/output"
+	"github.com/gethooklabs/gethook-cli/internal/proxy"
 )
 
 func newTriggerCmd() *cobra.Command {

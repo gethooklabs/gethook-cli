@@ -1,4 +1,4 @@
-module github.com/gethook/gethook-cli
+module github.com/gethooklabs/gethook-cli
 
 go 1.22
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gethook/gethook-cli/internal/output"
+	"github.com/gethooklabs/gethook-cli/internal/output"
 )
 
 func main() {
