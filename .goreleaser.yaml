@@ -73,11 +73,5 @@ nfpms:
       - deb
       - rpm
 
-scoop:
-  repository:
-    owner: gethooklabs
-    name: scoop-bucket
-    token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
-  homepage: "https://gethook.dev"
-  description: "Receive, debug, and replay webhooks locally."
-  license: Apache-2.0
+# scoop support removed — goreleaser v2 dropped the scoop publisher.
+# Windows users can download the binary directly from GitHub Releases.
