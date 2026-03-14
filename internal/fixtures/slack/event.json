@@ -1,0 +1,15 @@
+{
+  "token": "test_token",
+  "team_id": "T0001",
+  "api_app_id": "A0001",
+  "event": {
+    "type": "message",
+    "channel": "C0001",
+    "user": "U0001",
+    "text": "Hello, World!",
+    "ts": "1700000000.000100"
+  },
+  "type": "event_callback",
+  "event_id": "Ev0001",
+  "event_time": 1700000000
+}

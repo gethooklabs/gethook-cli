@@ -1,0 +1,20 @@
+{
+  "id": "evt_test_stripe_charge_failed",
+  "object": "event",
+  "type": "charge.failed",
+  "created": 1700000001,
+  "data": {
+    "object": {
+      "id": "ch_test_xyz",
+      "object": "charge",
+      "amount": 2000,
+      "currency": "usd",
+      "status": "failed",
+      "failure_code": "card_declined",
+      "failure_message": "Your card was declined.",
+      "customer": "cus_test_xyz",
+      "metadata": {}
+    }
+  },
+  "livemode": false
+}

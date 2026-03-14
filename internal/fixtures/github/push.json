@@ -1,0 +1,38 @@
+{
+  "ref": "refs/heads/main",
+  "before": "abc123def456",
+  "after": "789xyz012abc",
+  "repository": {
+    "id": 123456789,
+    "name": "my-repo",
+    "full_name": "octocat/my-repo",
+    "private": false,
+    "html_url": "https://github.com/octocat/my-repo",
+    "description": "A test repository",
+    "default_branch": "main"
+  },
+  "pusher": {
+    "name": "octocat",
+    "email": "octocat@github.com"
+  },
+  "sender": {
+    "login": "octocat",
+    "id": 1,
+    "type": "User"
+  },
+  "commits": [
+    {
+      "id": "789xyz012abc",
+      "message": "Fix: update webhook handler",
+      "timestamp": "2024-01-15T14:03:01Z",
+      "author": {
+        "name": "Octocat",
+        "email": "octocat@github.com",
+        "username": "octocat"
+      },
+      "added": ["internal/handler/webhook.go"],
+      "modified": [],
+      "removed": []
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/spf13/cobra"
+
+	"github.com/gethook/gethook-cli/internal/output"
+)
+
+func newInspectCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "inspect <event-id>",
+		Short: "Show full details of an event",
+		Long: `Show the complete details of a webhook event including:
+  - Full payload
+  - Original headers
+  - All delivery attempts with status codes and response bodies
+
+Examples:
+  gethook inspect evt_abc123
+  gethook inspect evt_abc123 --json`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			c := requireAuth()
+
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
+
+			ev, err := c.GetEvent(ctx, args[0])
+			if err != nil {
+				return fmt.Errorf("fetch event: %w", err)
+			}
+
+			if jsonOut {
+				b, _ := json.MarshalIndent(ev, "", "  ")
+				fmt.Println(string(b))
+				return nil
+			}
+
+			// ── Header ────────────────────────────────────────────────────
+			statusColor := lipgloss.Color("#22C55E")
+			if ev.Status == "dead_letter" {
+				statusColor = lipgloss.Color("#EF4444")
+			} else if ev.Status != "delivered" {
+				statusColor = lipgloss.Color("#F59E0B")
+			}
+			statusStyle := lipgloss.NewStyle().Foreground(statusColor).Bold(true)
+
+			fmt.Println()
+			fmt.Printf("  %s  %s\n",
+				output.StyleBold.Render("Event"),
+				output.StyleMuted.Render(ev.ID),
+			)
+			fmt.Printf("  %s  %s\n",
+				output.StyleBold.Render("Type  "),
+				ev.EventType,
+			)
+			fmt.Printf("  %s  %s\n",
+				output.StyleBold.Render("Status"),
+				statusStyle.Render(fmt.Sprintf("%s (%d attempt(s))", ev.Status, ev.AttemptsCount)),
+			)
+			fmt.Printf("  %s  %s\n",
+				output.StyleBold.Render("Time  "),
+				ev.ReceivedAt.Format("2006-01-02 15:04:05 UTC"),
+			)
+			if ev.SourceID != nil {
+				fmt.Printf("  %s  %s\n",
+					output.StyleBold.Render("Source"),
+					*ev.SourceID,
+				)
+			}
+
+			// ── Headers ───────────────────────────────────────────────────
+			if len(ev.Headers) > 0 {
+				output.Section("Headers")
+				for k, v := range ev.Headers {
+					fmt.Printf("  %s: %s\n",
+						output.StyleMuted.Render(k),
+						v,
+					)
+				}
+			}
+
+			// ── Payload ───────────────────────────────────────────────────
+			output.Section("Payload")
+			if ev.Payload != nil {
+				fmt.Println(output.PrettyJSON(ev.Payload))
+			} else {
+				output.Muted("  (no payload)")
+			}
+
+			// ── Delivery Attempts ─────────────────────────────────────────
+			if len(ev.Attempts) > 0 {
+				output.Section("Delivery Attempts")
+				for _, a := range ev.Attempts {
+					outcomeStyle := output.StyleSuccess
+					if a.Outcome != "success" {
+						outcomeStyle = output.StyleError
+					}
+
+					statusCode := ""
+					if a.ResponseStatus != nil {
+						statusCode = fmt.Sprintf("  HTTP %d", *a.ResponseStatus)
+					}
+
+					fmt.Printf("  #%d  %s  %s%s  %s\n",
+						a.AttemptNumber,
+						output.StyleMuted.Render(a.AttemptedAt.Format("15:04:05")),
+						outcomeStyle.Render(a.Outcome),
+						statusCode,
+						output.StyleMuted.Render(fmt.Sprintf("(%dms)", a.DurationMs)),
+					)
+
+					if a.ResponseBody != "" && len(a.ResponseBody) < 500 {
+						truncated := a.ResponseBody
+						if len(truncated) > 200 {
+							truncated = truncated[:200] + "…"
+						}
+						fmt.Printf("       %s\n", output.StyleMuted.Render(strings.TrimSpace(truncated)))
+					}
+				}
+			}
+
+			fmt.Println()
+			return nil
+		},
+	}
+}
