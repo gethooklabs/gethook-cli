@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	DefaultAPIBase = "https://api.gethook.dev"
-	DefaultIngest  = "https://in.gethook.dev"
+	DefaultAPIBase = "https://api-production-f26d.up.railway.app"
+	DefaultIngest  = "https://api-production-f26d.up.railway.app"
 )
 
 type Config struct {
