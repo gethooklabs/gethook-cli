@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -118,8 +117,7 @@ Examples:
 					durationMs := 0
 
 					if !noTunnel && forwardTo != "" {
-						body, _ := json.Marshal(ev.Payload)
-						result := proxy.Forward(ctx, forwardTo, ev.Headers, body)
+						result := proxy.Forward(ctx, forwardTo, ev.Headers, []byte(ev.Body))
 						if result.Err != nil {
 							statusStr = "forward-error"
 							output.Warn("  forward error: " + result.Err.Error())

@@ -22,7 +22,7 @@ type Event struct {
 	EventType  string
 	Status     string
 	Headers    map[string]string
-	Payload    interface{}
+	Body       string // raw JSON body as received
 	ReceivedAt time.Time
 }
 
@@ -81,15 +81,17 @@ func (r *Relay) Run(ctx context.Context, ch chan<- Event) error {
 				}
 				seen[e.ID] = true
 				headers := map[string]string{}
-				if e.Headers != nil {
-					headers = e.Headers
+				for k, v := range e.Headers {
+					if s, ok := v.(string); ok {
+						headers[k] = s
+					}
 				}
 				ch <- Event{
 					ID:         e.ID,
-					EventType:  e.EventType,
+					EventType:  e.EventTypeStr(),
 					Status:     e.Status,
 					Headers:    headers,
-					Payload:    e.Payload,
+					Body:       e.Body,
 					ReceivedAt: e.ReceivedAt,
 				}
 			}

@@ -18,9 +18,9 @@ func newInspectCmd() *cobra.Command {
 		Use:   "inspect <event-id>",
 		Short: "Show full details of an event",
 		Long: `Show the complete details of a webhook event including:
-  - Full payload
+  - Full payload body
   - Original headers
-  - All delivery attempts with status codes and response bodies
+  - All delivery attempts with status codes
 
 Examples:
   gethook inspect evt_abc123
@@ -32,15 +32,20 @@ Examples:
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
 
-			ev, err := c.GetEvent(ctx, args[0])
+			detail, err := c.GetEvent(ctx, args[0])
 			if err != nil {
 				return fmt.Errorf("fetch event: %w", err)
 			}
 
 			if jsonOut {
-				b, _ := json.MarshalIndent(ev, "", "  ")
+				b, _ := json.MarshalIndent(detail, "", "  ")
 				fmt.Println(string(b))
 				return nil
+			}
+
+			ev := detail.Event
+			if ev == nil {
+				return fmt.Errorf("empty event response")
 			}
 
 			// ── Header ────────────────────────────────────────────────────
@@ -53,52 +58,43 @@ Examples:
 			statusStyle := lipgloss.NewStyle().Foreground(statusColor).Bold(true)
 
 			fmt.Println()
-			fmt.Printf("  %s  %s\n",
-				output.StyleBold.Render("Event"),
-				output.StyleMuted.Render(ev.ID),
-			)
-			fmt.Printf("  %s  %s\n",
-				output.StyleBold.Render("Type  "),
-				ev.EventType,
-			)
+			fmt.Printf("  %s  %s\n", output.StyleBold.Render("Event "), output.StyleMuted.Render(ev.ID))
+			fmt.Printf("  %s  %s\n", output.StyleBold.Render("Type  "), ev.EventTypeStr())
 			fmt.Printf("  %s  %s\n",
 				output.StyleBold.Render("Status"),
 				statusStyle.Render(fmt.Sprintf("%s (%d attempt(s))", ev.Status, ev.AttemptsCount)),
 			)
-			fmt.Printf("  %s  %s\n",
-				output.StyleBold.Render("Time  "),
-				ev.ReceivedAt.Format("2006-01-02 15:04:05 UTC"),
-			)
+			fmt.Printf("  %s  %s\n", output.StyleBold.Render("Time  "), ev.ReceivedAt.Format("2006-01-02 15:04:05 UTC"))
 			if ev.SourceID != nil {
-				fmt.Printf("  %s  %s\n",
-					output.StyleBold.Render("Source"),
-					*ev.SourceID,
-				)
+				fmt.Printf("  %s  %s\n", output.StyleBold.Render("Source"), *ev.SourceID)
 			}
 
 			// ── Headers ───────────────────────────────────────────────────
 			if len(ev.Headers) > 0 {
 				output.Section("Headers")
 				for k, v := range ev.Headers {
-					fmt.Printf("  %s: %s\n",
-						output.StyleMuted.Render(k),
-						v,
-					)
+					fmt.Printf("  %s: %v\n", output.StyleMuted.Render(k), v)
 				}
 			}
 
 			// ── Payload ───────────────────────────────────────────────────
 			output.Section("Payload")
-			if ev.Payload != nil {
-				fmt.Println(output.PrettyJSON(ev.Payload))
+			if ev.Body != "" {
+				// Pretty-print if valid JSON, otherwise raw.
+				var pretty interface{}
+				if json.Unmarshal([]byte(ev.Body), &pretty) == nil {
+					fmt.Println(output.PrettyJSON(pretty))
+				} else {
+					fmt.Println(ev.Body)
+				}
 			} else {
-				output.Muted("  (no payload)")
+				output.Muted("  (no body)")
 			}
 
 			// ── Delivery Attempts ─────────────────────────────────────────
-			if len(ev.Attempts) > 0 {
+			if len(detail.Attempts) > 0 {
 				output.Section("Delivery Attempts")
-				for _, a := range ev.Attempts {
+				for _, a := range detail.Attempts {
 					outcomeStyle := output.StyleSuccess
 					if a.Outcome != "success" {
 						outcomeStyle = output.StyleError
@@ -109,20 +105,28 @@ Examples:
 						statusCode = fmt.Sprintf("  HTTP %d", *a.ResponseStatus)
 					}
 
+					latency := ""
+					if a.LatencyMS != nil {
+						latency = output.StyleMuted.Render(fmt.Sprintf("(%dms)", *a.LatencyMS))
+					}
+
 					fmt.Printf("  #%d  %s  %s%s  %s\n",
 						a.AttemptNumber,
-						output.StyleMuted.Render(a.AttemptedAt.Format("15:04:05")),
+						output.StyleMuted.Render(a.StartedAt.Format("15:04:05")),
 						outcomeStyle.Render(a.Outcome),
 						statusCode,
-						output.StyleMuted.Render(fmt.Sprintf("(%dms)", a.DurationMs)),
+						latency,
 					)
 
-					if a.ResponseBody != "" && len(a.ResponseBody) < 500 {
-						truncated := a.ResponseBody
+					if a.ResponseBody != nil && len(*a.ResponseBody) > 0 && len(*a.ResponseBody) < 500 {
+						truncated := *a.ResponseBody
 						if len(truncated) > 200 {
 							truncated = truncated[:200] + "…"
 						}
 						fmt.Printf("       %s\n", output.StyleMuted.Render(strings.TrimSpace(truncated)))
+					}
+					if a.ErrorMessage != nil {
+						fmt.Printf("       %s\n", output.StyleError.Render(*a.ErrorMessage))
 					}
 				}
 			}

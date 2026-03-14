@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -45,26 +44,31 @@ Examples:
 				return fmt.Errorf("fetch event: %w", err)
 			}
 
-			output.Info(fmt.Sprintf("Replaying %s", ev.ID))
-			output.Muted(fmt.Sprintf("  Type:     %s", ev.EventType))
-			output.Muted(fmt.Sprintf("  Status:   %s", ev.Status))
-			output.Muted(fmt.Sprintf("  Received: %s", ev.ReceivedAt.Format("2006-01-02 15:04:05")))
+			output.Info(fmt.Sprintf("Replaying %s", ev.Event.ID))
+			output.Muted(fmt.Sprintf("  Type:     %s", ev.Event.EventTypeStr()))
+			output.Muted(fmt.Sprintf("  Status:   %s", ev.Event.Status))
+			output.Muted(fmt.Sprintf("  Received: %s", ev.Event.ReceivedAt.Format("2006-01-02 15:04:05")))
 			fmt.Println()
 
 			if dryRun {
 				output.Warn("Dry run — no request sent.")
-				if ev.Payload != nil {
+				if ev.Event.Body != "" {
 					output.Section("Payload")
-					fmt.Println(output.PrettyJSON(ev.Payload))
+					fmt.Println(ev.Event.Body)
 				}
 				return nil
 			}
 
 			if forwardTo != "" {
 				// Forward locally without going through GetHook.
-				body, _ := json.Marshal(ev.Payload)
 				output.Info(fmt.Sprintf("→ POST %s", forwardTo))
-				result := proxy.Forward(ctx, forwardTo, ev.Headers, body)
+				headers := map[string]string{}
+				for k, v := range ev.Event.Headers {
+					if s, ok := v.(string); ok {
+						headers[k] = s
+					}
+				}
+				result := proxy.Forward(ctx, forwardTo, headers, []byte(ev.Event.Body))
 				if result.Err != nil {
 					return fmt.Errorf("forward error: %w", result.Err)
 				}

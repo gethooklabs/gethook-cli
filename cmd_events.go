@@ -60,36 +60,35 @@ func listEvents(c *api.Client, sourceID, status, direction string, limit int) er
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	events, err := c.ListEvents(ctx, api.ListEventsParams{
-		SourceID:  sourceID,
-		Status:    status,
-		Direction: direction,
-		Limit:     limit,
+	evts, err := c.ListEvents(ctx, api.ListEventsParams{
+		SourceID: sourceID,
+		Status:   status,
+		Limit:    limit,
 	})
 	if err != nil {
 		return fmt.Errorf("list events: %w", err)
 	}
 
 	if jsonOut {
-		b, _ := json.MarshalIndent(events, "", "  ")
+		b, _ := json.MarshalIndent(evts, "", "  ")
 		fmt.Println(string(b))
 		return nil
 	}
 
-	if len(events) == 0 {
+	if len(evts) == 0 {
 		output.Muted("No events found.")
 		return nil
 	}
 
-	rows := make([]output.TableRow, len(events))
-	for i, e := range events {
+	rows := make([]output.TableRow, len(evts))
+	for i, e := range evts {
 		srcID := ""
 		if e.SourceID != nil {
 			srcID = *e.SourceID
 		}
 		rows[i] = output.TableRow{
 			e.ID,
-			e.EventType,
+			e.EventTypeStr(),
 			e.Status,
 			e.Direction,
 			srcID,
@@ -113,12 +112,10 @@ func streamEvents(c *api.Client, sourceID, status, direction string) error {
 	fmt.Fprintln(os.Stderr)
 
 	seen := map[string]bool{}
-	// Seed with current events.
 	initial, err := c.ListEvents(ctx, api.ListEventsParams{
-		SourceID:  sourceID,
-		Status:    status,
-		Direction: direction,
-		Limit:     50,
+		SourceID: sourceID,
+		Status:   status,
+		Limit:    50,
 	})
 	if err != nil {
 		return fmt.Errorf("initial list: %w", err)
@@ -136,18 +133,17 @@ func streamEvents(c *api.Client, sourceID, status, direction string) error {
 			output.Muted("\nStream stopped.")
 			return nil
 		case <-ticker.C:
-			events, err := c.ListEvents(ctx, api.ListEventsParams{
-				SourceID:  sourceID,
-				Status:    status,
-				Direction: direction,
-				Limit:     20,
+			evts, err := c.ListEvents(ctx, api.ListEventsParams{
+				SourceID: sourceID,
+				Status:   status,
+				Limit:    20,
 			})
 			if err != nil {
 				output.Warn("poll error: " + err.Error())
 				continue
 			}
-			for i := len(events) - 1; i >= 0; i-- {
-				e := events[i]
+			for i := len(evts) - 1; i >= 0; i-- {
+				e := evts[i]
 				if seen[e.ID] {
 					continue
 				}
@@ -157,7 +153,7 @@ func streamEvents(c *api.Client, sourceID, status, direction string) error {
 					b, _ := json.MarshalIndent(e, "", "  ")
 					fmt.Println(string(b))
 				} else {
-					output.EventLine(os.Stdout, e.ReceivedAt, "POST", e.EventType, e.Status, 0)
+					output.EventLine(os.Stdout, e.ReceivedAt, "POST", e.EventTypeStr(), e.Status, 0)
 				}
 			}
 		}

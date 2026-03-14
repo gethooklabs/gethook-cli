@@ -27,6 +27,7 @@ type Source struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	PathToken string    `json:"path_token"`
+	IngestURL string    `json:"ingest_url"` // pre-built by backend
 	Status    string    `json:"status"`
 	AuthMode  string    `json:"auth_mode"`
 	CreatedAt time.Time `json:"created_at"`
@@ -54,34 +55,49 @@ type Route struct {
 
 // ── Events ────────────────────────────────────────────────────────────────────
 
+// Event matches the backend events.Event JSON shape exactly.
 type Event struct {
-	ID             string            `json:"id"`
-	Direction      string            `json:"direction"`
-	SourceID       *string           `json:"source_id,omitempty"`
-	EventType      string            `json:"event_type"`
-	Status         string            `json:"status"`
-	AttemptsCount  int               `json:"attempts_count"`
-	Headers        map[string]string `json:"headers,omitempty"`
-	Payload        interface{}       `json:"payload,omitempty"`
-	ReceivedAt     time.Time         `json:"received_at"`
-	NextAttemptAt  *time.Time        `json:"next_attempt_at,omitempty"`
+	ID              string                 `json:"id"`
+	AccountID       string                 `json:"account_id"`
+	Direction       string                 `json:"direction"`
+	SourceID        *string                `json:"source_id,omitempty"`
+	EventType       *string                `json:"event_type,omitempty"`
+	ExternalEventID *string                `json:"external_event_id,omitempty"`
+	ReceivedAt      time.Time              `json:"received_at"`
+	Headers         map[string]interface{} `json:"headers"`
+	Body            string                 `json:"body"`
+	Status          string                 `json:"status"`
+	AttemptsCount   int                    `json:"attempts_count"`
+	CreatedAt       time.Time              `json:"created_at"`
 }
 
+// EventType returns the event type string, or "unknown" if nil.
+func (e Event) EventTypeStr() string {
+	if e.EventType != nil {
+		return *e.EventType
+	}
+	return "unknown"
+}
+
+// DeliveryAttempt matches the backend events.DeliveryAttempt JSON shape.
 type DeliveryAttempt struct {
-	ID            string    `json:"id"`
-	EventID       string    `json:"event_id"`
-	DestinationID string    `json:"destination_id"`
-	AttemptNumber int       `json:"attempt_number"`
-	Outcome       string    `json:"outcome"`
-	ResponseStatus *int     `json:"response_status,omitempty"`
-	ResponseBody  string    `json:"response_body,omitempty"`
-	AttemptedAt   time.Time `json:"attempted_at"`
-	DurationMs    int       `json:"duration_ms,omitempty"`
+	ID             string     `json:"id"`
+	EventID        string     `json:"event_id"`
+	DestinationID  string     `json:"destination_id"`
+	AttemptNumber  int        `json:"attempt_number"`
+	StartedAt      time.Time  `json:"started_at"`
+	FinishedAt     *time.Time `json:"finished_at,omitempty"`
+	ResponseStatus *int       `json:"response_status,omitempty"`
+	ResponseBody   *string    `json:"response_body,omitempty"`
+	ErrorMessage   *string    `json:"error_message,omitempty"`
+	LatencyMS      *int       `json:"latency_ms,omitempty"`
+	Outcome        string     `json:"outcome"`
 }
 
+// EventDetail matches { "event": {...}, "attempts": [...] } from GET /v1/events/{id}.
 type EventDetail struct {
-	Event
-	Attempts []DeliveryAttempt `json:"attempts,omitempty"`
+	Event    *Event            `json:"event"`
+	Attempts []DeliveryAttempt `json:"attempts"`
 }
 
 // ── List params ───────────────────────────────────────────────────────────────
@@ -91,13 +107,19 @@ type ListEventsParams struct {
 	Status    string
 	Direction string
 	Limit     int
-	After     string // cursor: last event ID seen
 }
 
 // ── Wrapped responses ─────────────────────────────────────────────────────────
 
+// dataEnvelope is used when the backend returns { "data": T }.
 type dataEnvelope[T any] struct {
 	Data T `json:"data"`
+}
+
+// eventListData matches { "data": { "items": [...], "total": N } }.
+type eventListData struct {
+	Items []*Event `json:"items"`
+	Total int      `json:"total"`
 }
 
 type errorEnvelope struct {

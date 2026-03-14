@@ -185,16 +185,13 @@ func (c *Client) DeleteRoute(ctx context.Context, id string) error {
 
 // ── Events ────────────────────────────────────────────────────────────────────
 
-func (c *Client) ListEvents(ctx context.Context, p ListEventsParams) ([]Event, error) {
+func (c *Client) ListEvents(ctx context.Context, p ListEventsParams) ([]*Event, error) {
 	q := url.Values{}
 	if p.SourceID != "" {
 		q.Set("source_id", p.SourceID)
 	}
 	if p.Status != "" {
 		q.Set("status", p.Status)
-	}
-	if p.Direction != "" {
-		q.Set("direction", p.Direction)
 	}
 	if p.Limit > 0 {
 		q.Set("limit", strconv.Itoa(p.Limit))
@@ -205,22 +202,22 @@ func (c *Client) ListEvents(ctx context.Context, p ListEventsParams) ([]Event, e
 		path += "?" + q.Encode()
 	}
 
-	var env dataEnvelope[[]Event]
+	var env dataEnvelope[eventListData]
 	if err := c.get(ctx, path, &env); err != nil {
 		return nil, err
 	}
-	if env.Data == nil {
-		return []Event{}, nil
+	if env.Data.Items == nil {
+		return []*Event{}, nil
 	}
-	return env.Data, nil
+	return env.Data.Items, nil
 }
 
 func (c *Client) GetEvent(ctx context.Context, id string) (*EventDetail, error) {
-	var env dataEnvelope[*EventDetail]
+	var env dataEnvelope[EventDetail]
 	if err := c.get(ctx, "/v1/events/"+id, &env); err != nil {
 		return nil, err
 	}
-	return env.Data, nil
+	return &env.Data, nil
 }
 
 func (c *Client) ReplayEvent(ctx context.Context, id string) error {
