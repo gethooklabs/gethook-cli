@@ -1,0 +1,21 @@
+{
+  "id": "evt_test_stripe_pi_succeeded",
+  "object": "event",
+  "type": "payment_intent.succeeded",
+  "created": 1700000000,
+  "data": {
+    "object": {
+      "id": "pi_test_abc123",
+      "object": "payment_intent",
+      "amount": 2000,
+      "currency": "usd",
+      "status": "succeeded",
+      "customer": "cus_test_xyz",
+      "description": "Test payment",
+      "payment_method": "pm_test_card",
+      "receipt_email": "customer@example.com",
+      "metadata": {}
+    }
+  },
+  "livemode": false
+}

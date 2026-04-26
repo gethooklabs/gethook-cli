@@ -1,0 +1,19 @@
+{
+  "id": "evt_test_stripe_customer_created",
+  "object": "event",
+  "type": "customer.created",
+  "created": 1700000002,
+  "data": {
+    "object": {
+      "id": "cus_test_new",
+      "object": "customer",
+      "email": "newuser@example.com",
+      "name": "New User",
+      "phone": null,
+      "created": 1700000002,
+      "livemode": false,
+      "metadata": {}
+    }
+  },
+  "livemode": false
+}

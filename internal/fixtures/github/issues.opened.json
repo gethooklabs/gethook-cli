@@ -1,0 +1,29 @@
+{
+  "action": "opened",
+  "issue": {
+    "id": 111222333,
+    "number": 99,
+    "title": "Bug: webhook not delivered after 5xx response",
+    "body": "We're seeing webhooks that aren't being retried after a 502 response from our server.",
+    "state": "open",
+    "html_url": "https://github.com/octocat/my-repo/issues/99",
+    "user": {
+      "login": "reporter",
+      "id": 2
+    },
+    "labels": [
+      { "name": "bug", "color": "ee0701" }
+    ],
+    "created_at": "2024-01-15T15:00:00Z",
+    "updated_at": "2024-01-15T15:00:00Z"
+  },
+  "repository": {
+    "id": 123456789,
+    "name": "my-repo",
+    "full_name": "octocat/my-repo"
+  },
+  "sender": {
+    "login": "reporter",
+    "id": 2
+  }
+}
